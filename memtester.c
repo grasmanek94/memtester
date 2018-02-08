@@ -102,16 +102,17 @@ off_t physaddrbase = 0;
 /* Function definitions */
 void usage(char *me) {
     fprintf(stderr, "\n"
-            "Usage: %s [-p physaddrbase [-d device]] <mem>[B|K|M|G] [loops]\n",
+            "Usage: %s [-p physaddrbase [-d device]] <mem>[B|K|M|G] [loops] [threads]\n",
             me);
     exit(EXIT_FAIL_NONSTARTER);
 }
 
 int main(int argc, char **argv) {
     ul loops, loop, i;
+	ul threads;
     size_t pagesize, wantraw, wantmb, wantbytes, wantbytes_orig, bufsize,
          halflen, count;
-    char *memsuffix, *addrsuffix, *loopsuffix;
+    char *memsuffix, *addrsuffix, *loopsuffix, *threadssuffix;
     ptrdiff_t pagesizemask;
     void volatile *buf, *aligned;
     ulv *bufa, *bufb;
@@ -266,6 +267,28 @@ int main(int argc, char **argv) {
             usage(argv[0]); /* doesn't return */
         }
     }
+
+	optind++;
+	if (optind >= argc) {
+		threads = 1;
+	}
+	else {
+		errno = 0;
+		threads = strtoul(argv[optind], &threadssuffix, 0);
+		if (errno != 0) {
+			fprintf(stderr, "failed to parse number of threads");
+			usage(argv[0]); /* doesn't return */
+		}
+		if (*threadssuffix != '\0') {
+			fprintf(stderr, "thread suffix %c\n", *threadssuffix);
+			usage(argv[0]); /* doesn't return */
+		}
+	}
+
+	if (threads < 1) {
+		fprintf(stderr, "amount of threads must be greater than 0");
+		usage(argv[0]); /* doesn't return */
+	}
 
     printf("want %lluMB (%llu bytes)\n", (ull) wantmb, (ull) wantbytes);
     buf = NULL;
